@@ -1,0 +1,34 @@
+cmake_minimum_required(VERSION 3.8)
+
+project(cjson)
+
+set(CMAKE_C_STANDARD 11)
+
+# Set the Compilation options
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Werror -Wextra -ansi -pedantic")
+
+# Set the compilation options of the test program
+set(CMAKE_DEBUG_C_FLAGS "-fsanitize=address -O1 -fno-omit-frame-pointer")
+if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${CMAKE_DEBUG_C_FLAGS}")
+  set(CMAKE_VERBOSE_MAKEFILE ON)
+endif()
+
+# Code coverage
+option(CMAKE_C_COVERAGE "Enable Code Coverage" ON)
+if (CMAKE_C_COVERAGE AND ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -coverage")
+  set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMakeModules)
+  include(CodeCoverage)
+  setup_target_for_coverage_gcovr_html(NAME code_coverage)
+endif()
+
+add_library(cjson cjson.c)
+
+# Test
+if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+  add_executable(test_cjson test_cjson.c)
+  target_link_libraries(test_cjson cjson)
+  include(CTest)
+  add_test(NAME "test_cjson" COMMAND ${PROJECT_BINARY_DIR}/test_cjson)
+endif()
