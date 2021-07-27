@@ -240,6 +240,7 @@ static void test_parse_invalid_unicode_hex() {
   TEST_ERROR(CJSON_PARSE_INVALID_UNICODE_HEX, "\"\\u000/\"");
   TEST_ERROR(CJSON_PARSE_INVALID_UNICODE_HEX, "\"\\u000G\"");
   TEST_ERROR(CJSON_PARSE_INVALID_UNICODE_HEX, "\"\\u 123\"");
+  TEST_ERROR(CJSON_PARSE_INVALID_UNICODE_HEX, "\"\\uD800\\uG000\"");
 }
 
 static void test_parse_invalid_unicode_surrogate() {

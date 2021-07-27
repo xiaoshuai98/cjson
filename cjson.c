@@ -130,7 +130,7 @@ static void cjson_encode_utf8(cjson_context* context, unsigned u) {
     PUTC(context, 0xE0 | ((u >> 12) & 0xFF));
     PUTC(context, 0x80 | ((u >>  6) & 0x3F));
     PUTC(context, 0x80 | ( u        & 0x3F));
-  } else if (u <= 0x10FFFF) {
+  } else {
     PUTC(context, 0xF0 | ((u >> 18) & 0xFF));
     PUTC(context, 0x80 | ((u >> 12) & 0x3F));
     PUTC(context, 0x80 | ((u >>  6) & 0x3F));
