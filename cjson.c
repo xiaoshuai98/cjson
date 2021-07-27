@@ -106,7 +106,44 @@ static int cjson_parse_number(cjson_context *context, cjson_value *value) {
   return CJSON_PARSE_OK;
 }
 
-void cjson_set_string(cjson_value *value, const char *src, size_t len) {
+static const char* cjson_parse_hex4(const char* p, unsigned* u) {
+  int i;
+  *u = 0;
+  for (i = 0; i < 4; i++) {
+    char ch = *p++;
+    *u <<= 4;
+    if      (ch >= '0' && ch <= '9')  *u |= ch - '0';
+    else if (ch >= 'A' && ch <= 'F')  *u |= ch - ('A' - 10);
+    else if (ch >= 'a' && ch <= 'f')  *u |= ch - ('a' - 10);
+    else return NULL;
+  }
+  return p;
+}
+
+static void cjson_encode_utf8(cjson_context* context, unsigned u) {
+  if (u <= 0x7F) {
+    PUTC(context, u & 0xFF);
+  } else if (u <= 0x7FF) {
+    PUTC(context, 0xC0 | ((u >> 6) & 0xFF));
+    PUTC(context, 0x80 | ( u       & 0x3F));
+  } else if (u <= 0xFFFF) {
+    PUTC(context, 0xE0 | ((u >> 12) & 0xFF));
+    PUTC(context, 0x80 | ((u >>  6) & 0x3F));
+    PUTC(context, 0x80 | ( u        & 0x3F));
+  } else if (u <= 0x10FFFF) {
+    PUTC(context, 0xF0 | ((u >> 18) & 0xFF));
+    PUTC(context, 0x80 | ((u >> 12) & 0x3F));
+    PUTC(context, 0x80 | ((u >>  6) & 0x3F));
+    PUTC(context, 0x80 | ( u        & 0x3F));
+  }
+}
+
+static inline int cjson_parse_error(cjson_context *context, size_t head, int error) {
+  context->top = head;
+  return error;
+}
+
+static void cjson_set_string(cjson_value *value, const char *src, size_t len) {
   cjson_free_value(value);
   value->str = (char*)malloc(len + 1);
   memcpy(value->str, src, len);
@@ -118,6 +155,7 @@ void cjson_set_string(cjson_value *value, const char *src, size_t len) {
 static int cjson_parse_string(cjson_context *context, cjson_value *value) {
   size_t head = context->top, len;
   const char* p;
+  unsigned u, u2;
   p = context->json + 1;
   while(1) {
     char ch = *p++;
@@ -130,7 +168,7 @@ static int cjson_parse_string(cjson_context *context, cjson_value *value) {
       }
       case '\\': {
         switch (*p++) {
-          case '"':  PUTC(context, '"'); break;
+          case '"':  PUTC(context, '"');  break;
           case '\\': PUTC(context, '\\'); break;
           case '/':  PUTC(context, '/' ); break;
           case 'b':  PUTC(context, '\b'); break;
@@ -138,21 +176,36 @@ static int cjson_parse_string(cjson_context *context, cjson_value *value) {
           case 'n':  PUTC(context, '\n'); break;
           case 'r':  PUTC(context, '\r'); break;
           case 't':  PUTC(context, '\t'); break;
+          case 'u': {
+            if (!(p = cjson_parse_hex4(p, &u))) {
+              return cjson_parse_error(context, head, CJSON_PARSE_INVALID_UNICODE_HEX);
+            } 
+            if (u >= 0xD800 && u <= 0xDBFF) { /* surrogate pair */
+              if (*p++ != '\\')
+                return cjson_parse_error(context, head, CJSON_PARSE_INVALID_UNICODE_SURROGATE);
+              if (*p++ != 'u')
+                return cjson_parse_error(context, head, CJSON_PARSE_INVALID_UNICODE_SURROGATE);
+              if (!(p = cjson_parse_hex4(p, &u2)))
+                return cjson_parse_error(context, head, CJSON_PARSE_INVALID_UNICODE_HEX);
+              if (u2 < 0xDC00 || u2 > 0xDFFF)
+                return cjson_parse_error(context, head, CJSON_PARSE_INVALID_UNICODE_SURROGATE);
+              u = (((u - 0xD800) << 10) | (u2 - 0xDC00)) + 0x10000;
+            }
+            cjson_encode_utf8(context, u);
+            break;
+          }
           default: {
-            context->top = head;
-            return CJSON_PARSE_INVALID_STRING_ESCAPE;
+            return cjson_parse_error(context, head, CJSON_PARSE_INVALID_STRING_ESCAPE);
           }
         }
         break;
       }
       case '\0': {
-        context->top = head;
-        return CJSON_PARSE_MISS_QUOTATION_MARK;
+        return cjson_parse_error(context, head, CJSON_PARSE_MISS_QUOTATION_MARK);
       }
       default: {
         if ((unsigned char)ch < 0x20) { 
-          context->top = head;
-          return CJSON_PARSE_INVALID_STRING_CHAR;
+          return cjson_parse_error(context, head, CJSON_PARSE_INVALID_STRING_CHAR);
         }
         PUTC(context, ch);
       }
