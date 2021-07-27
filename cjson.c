@@ -10,7 +10,7 @@
 #include <math.h>
 #include <errno.h>
 
-#define CJSON_PARSE_STACK_INIT_SIZE 256
+#define CJSON_PARSE_STACK_INIT_SIZE 32
 
 #define ISDIGIT(ch)     ((ch) >= '0' && (ch) <= '9')
 #define ISDIGIT1TO9(ch) ((ch) >= '1' && (ch) <= '9')
@@ -213,12 +213,57 @@ static int cjson_parse_string(cjson_context *context, cjson_value *value) {
   }
 }
 
+static int cjson_parse_value(cjson_context *context, cjson_value *value);
+
+static int cjson_parse_array(cjson_context *context, cjson_value *value) {
+  size_t size = 0;
+  int ret;
+  context->json++;
+  cjson_parse_whitespace(context);
+  if (*context->json == ']') {
+    value->type = CJSON_ARRAY;
+    value->elements = NULL;
+    value->size = 0;
+    context->json++;
+    return CJSON_PARSE_OK;
+  }
+  while (1) {
+    cjson_value element;
+    if ((ret = cjson_parse_value(context, &element)) != CJSON_PARSE_OK) {
+      break;
+    }
+    memcpy(cjson_context_push(context, sizeof(cjson_value)), &element, sizeof(cjson_value));
+    size++;
+    cjson_parse_whitespace(context);
+    if (*context->json == ',') {
+      context->json++;
+      cjson_parse_whitespace(context);
+    } else if (*context->json == ']') {
+      value->type = CJSON_ARRAY;
+      value->size = size;
+      context->json++;
+      size *= sizeof(cjson_value);
+      memcpy(value->elements = (cjson_value*)malloc(size), cjson_context_pop(context, size), size);
+      return CJSON_PARSE_OK;
+    } else {
+      ret = CJSON_PARSE_MISS_COMMA_OR_SQUARE_BRACKET;
+      break;
+    }
+  }
+
+  for (size_t i = 0; i < size; i++) {
+    cjson_free_value((cjson_value*)cjson_context_pop(context, sizeof(cjson_value)));
+  }
+  return ret;
+}
+
 static int cjson_parse_value(cjson_context *context, cjson_value *value) {
   switch(*context->json) {
     case 't': return cjson_parse_str(context, value, "true", CJSON_TRUE);
     case 'f': return cjson_parse_str(context, value, "false", CJSON_FALSE);
     case 'n': return cjson_parse_str(context, value, "null", CJSON_NULL);
     case '"': return cjson_parse_string(context, value);
+    case '[': return cjson_parse_array(context, value);
     case '\0': return CJSON_PARSE_EXPECT_VALUE;
     default: return cjson_parse_number(context, value);
   }
@@ -249,8 +294,19 @@ int cjson_parse(const char *json, cjson_value *value) {
 }
 
 void cjson_free_value(cjson_value *value) {
-  if (value->type == CJSON_STRING) {
-    free(value->str);
-    value->type = CJSON_NULL;
+  switch (value->type) {
+    case CJSON_STRING: {
+      free(value->str);
+      break;
+    }
+    case CJSON_ARRAY: {
+      for (size_t i = 0; i < value->size; i++) {
+        cjson_free_value(&(value->elements[i]));
+      }
+      free(value->elements);
+    }
+    default:
+      return;
   }
+  value->type = CJSON_NULL;
 }

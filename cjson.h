@@ -22,8 +22,14 @@ typedef enum {
   CJSON_OBJECT
 } cjson_type;
 
-typedef struct {
+typedef struct cjson_value cjson_value;
+
+struct cjson_value {
   union {
+    struct {
+      cjson_value *elements;
+      size_t size;
+    };
     struct {
       char *str;
       size_t len;
@@ -31,7 +37,7 @@ typedef struct {
     double number;
   };
   cjson_type type;
-} cjson_value;
+};
 
 /**
  * @brief The state of parsing json.
@@ -46,7 +52,8 @@ enum {
   CJSON_PARSE_INVALID_STRING_ESCAPE,
   CJSON_PARSE_INVALID_STRING_CHAR,
   CJSON_PARSE_INVALID_UNICODE_HEX,
-  CJSON_PARSE_INVALID_UNICODE_SURROGATE
+  CJSON_PARSE_INVALID_UNICODE_SURROGATE,
+  CJSON_PARSE_MISS_COMMA_OR_SQUARE_BRACKET
 };
 
 /**
@@ -65,7 +72,7 @@ int cjson_parse(const char *json, cjson_value *value);
  * @param[in] value The result of parsing json, can't be NULL.
  * 
  * @note
- * If [value] is not a string, then this function does not have any side effects.
+ * If [value] is not a string or array, then this function does not have any side effects.
  */
 void cjson_free_value(cjson_value *value);
 

@@ -26,6 +26,7 @@ static const char *parsing_state[] = {
   "CJSON_PARSE_INVALID_STRING_CHAR",
   "CJSON_PARSE_INVALID_UNICODE_HEX",
   "CJSON_PARSE_INVALID_UNICODE_SURROGATE",
+  "CJSON_PARSE_MISS_COMMA_OR_SQUARE_BRACKET",
 };
 
 static const char *parsing_result[] = {
@@ -57,6 +58,9 @@ static const char *parsing_result[] = {
 
 #define EXPECT_EQ_DOUBLE(expect, actual) \
         EXPECT_EQ_BASE((expect) == (actual), expect, actual, "%.17g")
+
+#define EXPECT_EQ_SIZE_T(expect, actual) \
+        EXPECT_EQ_BASE((expect) == (actual), (size_t)expect, (size_t)actual, "%ld")
 
 /**
  * @details
@@ -172,6 +176,42 @@ static void test_parse_string() {
   TEST_STRING("\xF0\x9D\x84\x9E", "\"\\ud834\\udd1e\"");  /* G clef sign U+1D11E */
 }
 
+static void test_parse_array() {
+  cjson_value value;
+
+  EXPECT_EQ_STATE(CJSON_PARSE_OK, cjson_parse("[ ]", &value));
+  EXPECT_EQ_RESULT(CJSON_ARRAY, value.type);
+  EXPECT_EQ_SIZE_T(0, value.size);
+  cjson_free_value(&value);
+
+  EXPECT_EQ_STATE(CJSON_PARSE_OK, cjson_parse("[ null , false , true , 123 , \"abc\" ]", &value));
+  EXPECT_EQ_RESULT(CJSON_ARRAY, value.type);
+  EXPECT_EQ_SIZE_T(5, value.size);
+  EXPECT_EQ_STATE(CJSON_NULL, value.elements[0].type);
+  EXPECT_EQ_STATE(CJSON_FALSE, value.elements[1].type);
+  EXPECT_EQ_STATE(CJSON_TRUE, value.elements[2].type);
+  EXPECT_EQ_STATE(CJSON_NUMBER, value.elements[3].type);
+  EXPECT_EQ_STATE(CJSON_STRING, value.elements[4].type);
+  EXPECT_EQ_DOUBLE(123.0, value.elements[3].number);
+  EXPECT_EQ_STRING("abc", value.elements[4].str, value.elements[4].len);
+  cjson_free_value(&value);
+
+  EXPECT_EQ_STATE(CJSON_PARSE_OK, cjson_parse("[ [ ] , [ 0 ] , [ 0 , 1 ] , [ 0 , 1 , 2 ] ]", &value));
+  EXPECT_EQ_RESULT(CJSON_ARRAY, value.type);
+  EXPECT_EQ_SIZE_T(4, value.size);
+  for (int i = 0; i < 4; i++) {
+    cjson_value *element = &value.elements[i];
+    EXPECT_EQ_RESULT(CJSON_ARRAY, element->type);
+    EXPECT_EQ_SIZE_T((size_t)i, element->size);
+    for (int j = 0; j < i; j++) {
+      cjson_value *num = &element->elements[j];
+      EXPECT_EQ_RESULT(CJSON_NUMBER, num->type);
+      EXPECT_EQ_DOUBLE((double)j, num->number);
+    }
+  }
+  cjson_free_value(&value);
+}
+
 static void test_parse_expect_value() {
   TEST_ERROR(CJSON_PARSE_EXPECT_VALUE, NULL);
   TEST_ERROR(CJSON_PARSE_EXPECT_VALUE, "");
@@ -193,6 +233,10 @@ static void test_parse_invalid_value() {
   TEST_ERROR(CJSON_PARSE_INVALID_VALUE, "inf");
   TEST_ERROR(CJSON_PARSE_INVALID_VALUE, "NAN");
   TEST_ERROR(CJSON_PARSE_INVALID_VALUE, "nan");
+
+  /* invalid array */
+  TEST_ERROR(CJSON_PARSE_INVALID_VALUE, "[1,]");
+  TEST_ERROR(CJSON_PARSE_INVALID_VALUE, "[\"a\", nul]");
 }
 
 static void test_parse_root_not_singular() {
@@ -251,12 +295,20 @@ static void test_parse_invalid_unicode_surrogate() {
   TEST_ERROR(CJSON_PARSE_INVALID_UNICODE_SURROGATE, "\"\\uD800\\uE000\"");
 }
 
+static void test_parse_miss_comma_or_square_bracket() {
+  TEST_ERROR(CJSON_PARSE_MISS_COMMA_OR_SQUARE_BRACKET, "[1");
+  TEST_ERROR(CJSON_PARSE_MISS_COMMA_OR_SQUARE_BRACKET, "[1}");
+  TEST_ERROR(CJSON_PARSE_MISS_COMMA_OR_SQUARE_BRACKET, "[1 2");
+  TEST_ERROR(CJSON_PARSE_MISS_COMMA_OR_SQUARE_BRACKET, "[[]");
+}
+
 static void test_parse() {
   test_parse_null();
   test_parse_true();
   test_parse_false();
   test_parse_number();
   test_parse_string();
+  test_parse_array();
   test_parse_expect_value();
   test_parse_invalid_value();
   test_parse_root_not_singular();
@@ -266,6 +318,7 @@ static void test_parse() {
   test_parse_invalid_string_char();
   test_parse_invalid_unicode_hex();
   test_parse_invalid_unicode_surrogate();
+  test_parse_miss_comma_or_square_bracket();
 }
 
 int main() {
