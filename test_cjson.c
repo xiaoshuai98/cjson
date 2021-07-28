@@ -27,6 +27,9 @@ static const char *parsing_state[] = {
   "CJSON_PARSE_INVALID_UNICODE_HEX",
   "CJSON_PARSE_INVALID_UNICODE_SURROGATE",
   "CJSON_PARSE_MISS_COMMA_OR_SQUARE_BRACKET",
+  "CJSON_PARSE_MISS_KEY",
+  "CJSON_PARSE_MISS_COLON",
+  "CJSON_PARSE_MISS_COMMA_OR_CURLY_BRACKET",
 };
 
 static const char *parsing_result[] = {
@@ -212,6 +215,58 @@ static void test_parse_array() {
   cjson_free_value(&value);
 }
 
+static void test_parse_object() {
+  cjson_value value;
+
+  EXPECT_EQ_STATE(CJSON_PARSE_OK, cjson_parse(" { } ", &value));
+  EXPECT_EQ_RESULT(CJSON_OBJECT, value.type);
+  EXPECT_EQ_SIZE_T(0, value.mem_size);
+  cjson_free_value(&value);
+
+  EXPECT_EQ_STATE(CJSON_PARSE_OK, cjson_parse(
+    " { "
+    "\"n\" : null , "
+    "\"f\" : false , "
+    "\"t\" : true , "
+    "\"i\" : 123 , "
+    "\"s\" : \"abc\", "
+    "\"a\" : [ 1, 2, 3 ],"
+    "\"o\" : { \"1\" : 1, \"2\" : 2, \"3\" : 3 }"
+    " } "
+    , &value));
+  EXPECT_EQ_RESULT(CJSON_OBJECT, value.type);
+  EXPECT_EQ_SIZE_T(7, value.mem_size);
+  EXPECT_EQ_STRING("n", value.members[0].key, value.members[0].klen);
+  EXPECT_EQ_RESULT(CJSON_NULL, value.members[0].value.type);
+  EXPECT_EQ_STRING("f", value.members[1].key, value.members[1].klen);
+  EXPECT_EQ_RESULT(CJSON_FALSE, value.members[1].value.type);
+  EXPECT_EQ_STRING("t", value.members[2].key, value.members[2].klen);
+  EXPECT_EQ_RESULT(CJSON_TRUE, value.members[2].value.type);
+  EXPECT_EQ_STRING("i", value.members[3].key, value.members[3].klen);
+  EXPECT_EQ_RESULT(CJSON_NUMBER, value.members[3].value.type);
+  EXPECT_EQ_DOUBLE(123.0, value.members[3].value.number);
+  EXPECT_EQ_STRING("s", value.members[4].key, value.members[4].klen);
+  EXPECT_EQ_RESULT(CJSON_STRING, value.members[4].value.type);
+  EXPECT_EQ_STRING("abc", value.members[4].value.str, value.members[4].value.len);
+  EXPECT_EQ_STRING("a", value.members[5].key, value.members[5].klen);
+  EXPECT_EQ_RESULT(CJSON_ARRAY, value.members[5].value.type);
+  EXPECT_EQ_SIZE_T(3, value.members[5].value.size);
+  for (int i = 1; i < 4; i++) {
+    cjson_value *temp = &value.members[5].value.elements[i - 1];
+    EXPECT_EQ_RESULT(CJSON_NUMBER, temp->type);
+    EXPECT_EQ_DOUBLE((double)i, temp->number);
+  }
+  EXPECT_EQ_STRING("o", value.members[6].key, value.members[6].klen);
+  cjson_value *temp = &value.members[6].value;
+  EXPECT_EQ_RESULT(CJSON_OBJECT, temp->type);
+  EXPECT_EQ_SIZE_T(3, temp->mem_size);
+  for (int i = 1; i < 4; i++) {
+    EXPECT_EQ_RESULT(CJSON_NUMBER, temp->members[i - 1].value.type);
+    EXPECT_EQ_DOUBLE((double)i, temp->members[i - 1].value.number);
+  }
+  cjson_free_value(&value);
+}
+
 static void test_parse_expect_value() {
   TEST_ERROR(CJSON_PARSE_EXPECT_VALUE, NULL);
   TEST_ERROR(CJSON_PARSE_EXPECT_VALUE, "");
@@ -237,6 +292,9 @@ static void test_parse_invalid_value() {
   /* invalid array */
   TEST_ERROR(CJSON_PARSE_INVALID_VALUE, "[1,]");
   TEST_ERROR(CJSON_PARSE_INVALID_VALUE, "[\"a\", nul]");
+
+  /* invalid object */
+  TEST_ERROR(CJSON_PARSE_INVALID_VALUE, "{\"1\": tru}");
 }
 
 static void test_parse_root_not_singular() {
@@ -256,6 +314,7 @@ static void test_parse_number_too_big() {
 static void test_parse_missing_quotation_mark() {
   TEST_ERROR(CJSON_PARSE_MISS_QUOTATION_MARK, "\"");
   TEST_ERROR(CJSON_PARSE_MISS_QUOTATION_MARK, "\"abc");
+  TEST_ERROR(CJSON_PARSE_MISS_QUOTATION_MARK, "{\"1\": \"123}");
 }
 
 static void test_parse_invalid_string_escape() {
@@ -268,6 +327,7 @@ static void test_parse_invalid_string_escape() {
 static void test_parse_invalid_string_char() {
   TEST_ERROR(CJSON_PARSE_INVALID_STRING_CHAR, "\"\x01\"");
   TEST_ERROR(CJSON_PARSE_INVALID_STRING_CHAR, "\"\x1F\"");
+  TEST_ERROR(CJSON_PARSE_INVALID_STRING_CHAR, "{\"\a\": \"123\"}");
 }
 
 static void test_parse_invalid_unicode_hex() {
@@ -302,6 +362,29 @@ static void test_parse_miss_comma_or_square_bracket() {
   TEST_ERROR(CJSON_PARSE_MISS_COMMA_OR_SQUARE_BRACKET, "[[]");
 }
 
+static void test_parse_miss_key() {
+  TEST_ERROR(CJSON_PARSE_MISS_KEY, "{:1,");
+  TEST_ERROR(CJSON_PARSE_MISS_KEY, "{1:1,");
+  TEST_ERROR(CJSON_PARSE_MISS_KEY, "{true:1,");
+  TEST_ERROR(CJSON_PARSE_MISS_KEY, "{false:1,");
+  TEST_ERROR(CJSON_PARSE_MISS_KEY, "{null:1,");
+  TEST_ERROR(CJSON_PARSE_MISS_KEY, "{[]:1,");
+  TEST_ERROR(CJSON_PARSE_MISS_KEY, "{{}:1,");
+  TEST_ERROR(CJSON_PARSE_MISS_KEY, "{\"a\":1,");
+}
+
+static void test_parse_miss_colon() {
+  TEST_ERROR(CJSON_PARSE_MISS_COLON, "{\"a\"}");
+  TEST_ERROR(CJSON_PARSE_MISS_COLON, "{\"a\",\"b\"}");
+}
+
+static void test_parse_miss_comma_or_curly_bracket() {
+  TEST_ERROR(CJSON_PARSE_MISS_COMMA_OR_CURLY_BRACKET, "{\"a\":1");
+  TEST_ERROR(CJSON_PARSE_MISS_COMMA_OR_CURLY_BRACKET, "{\"a\":1]");
+  TEST_ERROR(CJSON_PARSE_MISS_COMMA_OR_CURLY_BRACKET, "{\"a\":1 \"b\"");
+  TEST_ERROR(CJSON_PARSE_MISS_COMMA_OR_CURLY_BRACKET, "{\"a\":{}");
+}
+
 static void test_parse() {
   test_parse_null();
   test_parse_true();
@@ -309,6 +392,7 @@ static void test_parse() {
   test_parse_number();
   test_parse_string();
   test_parse_array();
+  test_parse_object();
   test_parse_expect_value();
   test_parse_invalid_value();
   test_parse_root_not_singular();
@@ -319,6 +403,9 @@ static void test_parse() {
   test_parse_invalid_unicode_hex();
   test_parse_invalid_unicode_surrogate();
   test_parse_miss_comma_or_square_bracket();
+  test_parse_miss_key();
+  test_parse_miss_colon();
+  test_parse_miss_comma_or_curly_bracket();
 }
 
 int main() {

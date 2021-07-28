@@ -152,8 +152,8 @@ static void cjson_set_string(cjson_value *value, const char *src, size_t len) {
   value->type = CJSON_STRING;
 }
 
-static int cjson_parse_string(cjson_context *context, cjson_value *value) {
-  size_t head = context->top, len;
+static int cjson_parse_string_raw(cjson_context *context, char **str, size_t *len) {
+  size_t head = context->top;
   const char* p;
   unsigned u, u2;
   p = context->json + 1;
@@ -161,8 +161,8 @@ static int cjson_parse_string(cjson_context *context, cjson_value *value) {
     char ch = *p++;
     switch (ch) {
       case '"': {
-        len = context->top - head;
-        cjson_set_string(value, (const char*)cjson_context_pop(context, len), len);
+        *len = context->top - head;
+        *str = cjson_context_pop(context, *len);
         context->json = p;
         return CJSON_PARSE_OK;
       }
@@ -213,6 +213,17 @@ static int cjson_parse_string(cjson_context *context, cjson_value *value) {
   }
 }
 
+static int cjson_parse_string(cjson_context *context, cjson_value *value) {
+  int state;
+  char *str;
+  size_t len;
+  if ((state = cjson_parse_string_raw(context, &str, &len)) == CJSON_PARSE_OK) {
+    cjson_set_string(value, str, len);
+  }
+  return state;
+}
+
+/* Forward declaration */
 static int cjson_parse_value(cjson_context *context, cjson_value *value);
 
 static int cjson_parse_array(cjson_context *context, cjson_value *value) {
@@ -257,6 +268,70 @@ static int cjson_parse_array(cjson_context *context, cjson_value *value) {
   return ret;
 }
 
+static int cjson_parse_object(cjson_context *context, cjson_value *value) {
+  size_t mem_size;
+  int state;
+  context->json++;
+  mem_size = 0;
+  cjson_parse_whitespace(context);
+  if (*context->json == '}') {
+    value->type = CJSON_OBJECT;
+    value->members = NULL;
+    value->mem_size = 0;
+    context->json++;
+    return CJSON_PARSE_OK;
+  }
+  while (1) {
+    cjson_member member;
+    char *str;
+    if (*context->json != '"') {
+      state = CJSON_PARSE_MISS_KEY;
+      break;
+    }
+    if ((state = cjson_parse_string_raw(context, &str, &member.klen)) != CJSON_PARSE_OK) {
+      break;
+    }
+    memcpy(member.key = (char*)malloc(member.klen + 1), str, member.klen);
+    member.key[member.klen] = '\0';
+    cjson_parse_whitespace(context);
+    if (*context->json != ':') {
+      state = CJSON_PARSE_MISS_COLON;
+      free(member.key);
+      break;
+    }
+    context->json++;
+    cjson_parse_whitespace(context);
+    if ((state = cjson_parse_value(context, &member.value)) != CJSON_PARSE_OK) {
+      free(member.key);
+      break;
+    }
+    memcpy(cjson_context_push(context, sizeof(cjson_member)), &member, sizeof(member));
+    mem_size++;
+    cjson_parse_whitespace(context);
+    if (*context->json == ',') {
+      context->json++;
+      cjson_parse_whitespace(context);
+    } else if (*context->json == '}') {
+      value->type = CJSON_OBJECT;
+      value->mem_size = mem_size;
+      context->json++;
+      mem_size *= sizeof(cjson_member);
+      memcpy(value->members = (cjson_member*)malloc(mem_size), cjson_context_pop(context, mem_size), mem_size);
+      return CJSON_PARSE_OK;
+    } else {
+      state = CJSON_PARSE_MISS_COMMA_OR_CURLY_BRACKET;
+      break;
+    }
+  }
+  for (size_t i = 0; i < mem_size; i++) {
+    cjson_member *member = cjson_context_pop(context, sizeof(cjson_member));
+    free(member->key);
+    cjson_free_value(&member->value);
+  }
+  value->type = CJSON_NULL;
+  return state;
+}
+
 static int cjson_parse_value(cjson_context *context, cjson_value *value) {
   switch(*context->json) {
     case 't': return cjson_parse_str(context, value, "true", CJSON_TRUE);
@@ -264,6 +339,7 @@ static int cjson_parse_value(cjson_context *context, cjson_value *value) {
     case 'n': return cjson_parse_str(context, value, "null", CJSON_NULL);
     case '"': return cjson_parse_string(context, value);
     case '[': return cjson_parse_array(context, value);
+    case '{': return cjson_parse_object(context, value);
     case '\0': return CJSON_PARSE_EXPECT_VALUE;
     default: return cjson_parse_number(context, value);
   }
@@ -304,6 +380,15 @@ void cjson_free_value(cjson_value *value) {
         cjson_free_value(&(value->elements[i]));
       }
       free(value->elements);
+      break;
+    }
+    case CJSON_OBJECT: {
+      for (size_t i = 0; i < value->mem_size; i++) {
+        free(value->members[i].key);
+        cjson_free_value(&value->members[i].value);
+      }
+      free(value->members);
+      break;
     }
     default:
       return;

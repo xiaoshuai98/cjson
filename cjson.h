@@ -23,20 +23,22 @@ typedef enum {
 } cjson_type;
 
 typedef struct cjson_value cjson_value;
+typedef struct cjson_member cjson_member;
 
 struct cjson_value {
   union {
-    struct {
-      cjson_value *elements;
-      size_t size;
-    };
-    struct {
-      char *str;
-      size_t len;
-    };
+    struct { cjson_member *members; size_t mem_size; };
+    struct { cjson_value *elements; size_t size; };
+    struct { char *str; size_t len; };
     double number;
   };
   cjson_type type;
+};
+
+struct cjson_member {
+  char *key;
+  size_t klen;
+  cjson_value value;
 };
 
 /**
@@ -53,7 +55,10 @@ enum {
   CJSON_PARSE_INVALID_STRING_CHAR,
   CJSON_PARSE_INVALID_UNICODE_HEX,
   CJSON_PARSE_INVALID_UNICODE_SURROGATE,
-  CJSON_PARSE_MISS_COMMA_OR_SQUARE_BRACKET
+  CJSON_PARSE_MISS_COMMA_OR_SQUARE_BRACKET,
+  CJSON_PARSE_MISS_KEY,
+  CJSON_PARSE_MISS_COLON,
+  CJSON_PARSE_MISS_COMMA_OR_CURLY_BRACKET
 };
 
 /**
