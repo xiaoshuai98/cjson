@@ -15,6 +15,8 @@ static int main_ret = 0;
 static int test_count = 0;
 static int test_pass = 0;
 
+#define PARSE_WRONG_TYPE 128
+
 static const char *parsing_state[] = {
   "CJSON_PARSE_OK",
   "CJSON_PARSE_EXPECT_VALUE",
@@ -469,6 +471,15 @@ static void test_stringify() {
   test_stringify_string();
   test_stringify_array();
   test_stringify_object();
+  
+  cjson_value value;
+  value.type = PARSE_WRONG_TYPE;
+  assert(!cjson_stringify(&value, NULL));
+
+  cjson_parse("null", &value);
+  char *json = cjson_stringify(&value, NULL);
+  cjson_free_value(&value);
+  free(json);
 }
 
 int main() {
