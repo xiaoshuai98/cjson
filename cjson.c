@@ -9,8 +9,11 @@
 #include <stdlib.h>
 #include <math.h>
 #include <errno.h>
+#include <stdio.h>
 
 #define CJSON_PARSE_STACK_INIT_SIZE 32
+
+#define CJSON_STRINGIFY_STACI_INIT_SIZE 256
 
 #define ISDIGIT(ch)     ((ch) >= '0' && (ch) <= '9')
 #define ISDIGIT1TO9(ch) ((ch) >= '1' && (ch) <= '9')
@@ -18,6 +21,8 @@
   do { \
     *(char*)cjson_context_push(c, sizeof(char)) = (ch); \
   } while(0)
+
+#define PUTS(c, str, len)     memcpy(cjson_context_push(c, len), str, len)
 
 /**
  * @brief The context of parsing json.
@@ -367,6 +372,89 @@ int cjson_parse(const char *json, cjson_value *value) {
     free(context.stack);
   }
   return state;
+}
+
+static void cjson_stringify_string(cjson_context *context, const char *str, size_t len) {
+  static const char hex_digits[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
+  size_t i, size;
+  char* head, *p;
+  p = head = cjson_context_push(context, size = len * 6 + 2); /* "\u00xx..." */
+  *p++ = '"';
+  for (i = 0; i < len; i++) {
+    unsigned char ch = (unsigned char)str[i];
+    switch (ch) {
+      case '\"': *p++ = '\\'; *p++ = '\"'; break;
+      case '\\': *p++ = '\\'; *p++ = '\\'; break;
+      case '\b': *p++ = '\\'; *p++ = 'b';  break;
+      case '\f': *p++ = '\\'; *p++ = 'f';  break;
+      case '\n': *p++ = '\\'; *p++ = 'n';  break;
+      case '\r': *p++ = '\\'; *p++ = 'r';  break;
+      case '\t': *p++ = '\\'; *p++ = 't';  break;
+      default: {
+        if (ch < 0x20) {
+          *p++ = '\\'; *p++ = 'u'; *p++ = '0'; *p++ = '0';
+          *p++ = hex_digits[ch >> 4];
+          *p++ = hex_digits[ch & 15];
+        } else {
+          *p++ = str[i];
+        }  
+      }  
+    }
+  }
+  *p++ = '"';
+  context->top -= size - (p - head);
+}
+
+static int cjson_stringify_value(cjson_context *context, const cjson_value *value) {
+  size_t i;
+  switch (value->type) {
+    case CJSON_NULL:   PUTS(context, "null",  4); break;
+    case CJSON_FALSE:  PUTS(context, "false", 5); break;
+    case CJSON_TRUE:   PUTS(context, "true",  4); break;
+    case CJSON_NUMBER: context->top -= 32 - sprintf(cjson_context_push(context, 32), "%.17g", value->number); break;
+    case CJSON_STRING: cjson_stringify_string(context, value->str, value->len); break;
+    case CJSON_ARRAY: {
+      PUTC(context, '[');
+      for (i = 0; i < value->size; i++) {
+        if (i > 0) {
+          PUTC(context, ',');
+        }
+        cjson_stringify_value(context, &value->elements[i]);
+      }
+      PUTC(context, ']');
+      break;
+    }
+    case CJSON_OBJECT: {
+      PUTC(context, '{');
+      for (i = 0; i < value->mem_size; i++) {
+        if (i > 0) {
+          PUTC(context, ',');
+        }
+        cjson_stringify_string(context, value->members[i].key, value->members[i].klen);
+        PUTC(context, ':');
+        cjson_stringify_value(context, &value->members[i].value);
+      }
+      PUTC(context, '}');
+      break;
+    }
+    default: return -1;
+  }
+  return 0;
+}
+
+char* cjson_stringify(const cjson_value *value, size_t *length) {
+  cjson_context context;
+  context.stack = (char*)malloc(CJSON_STRINGIFY_STACI_INIT_SIZE);
+  context.top = 0;
+  if (cjson_stringify_value(&context, value) < 0) {
+    free(context.stack);
+    return NULL;
+  }
+  if (length) {
+    *length = context.top;
+  }
+  PUTC(&context, '\0');
+  return context.stack;
 }
 
 void cjson_free_value(cjson_value *value) {

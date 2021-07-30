@@ -81,4 +81,18 @@ int cjson_parse(const char *json, cjson_value *value);
  */
 void cjson_free_value(cjson_value *value);
 
+/**
+ * @brief Convert the internal data structure of the json parser into a C-style string.
+ * 
+ * @param[in] value The internal data structure of the json parser.
+ * @param[out] length  The length of the converted C-style string, can be NULL.
+ * 
+ * @return A pointer to the converted C-style string, or NULL if stringify failed.
+ * 
+ * @note
+ * This function uses dynamic memory to store the converted string, 
+ * so the caller is responsible for freeing the pointer returned by this function.
+ */
+char* cjson_stringify(const cjson_value *value, size_t *length);
+
 #endif  /* CJSON_H__ */
