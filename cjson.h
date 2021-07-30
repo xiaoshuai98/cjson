@@ -95,4 +95,36 @@ void cjson_free_value(cjson_value *value);
  */
 char* cjson_stringify(const cjson_value *value, size_t *length);
 
+/**
+ * @brief Find the index corresponding to a key of the json object.
+ * 
+ * @param[in] value The result of parsing json string.
+ * @param[in] key The key to find.
+ * @param[in] klen The length of the key to find.
+ * 
+ * @return The index of the target key in the json object, or -1 if not find.
+ */
+int cjson_find_key_index(const cjson_value *value, const char *key, size_t klen);
+
+/**
+ * @brief Find the value corresponding to a key in the json object.
+ * 
+ * @param[in] value The result of parsing json string.
+ * @param[in] key The key to find.
+ * @param[in] klen The length of the key to find.
+ * 
+ * @return The value corresponding to the target key in the json object, or NULL if not find.
+ */
+const cjson_value* cjson_find_key_value(const cjson_value *value, const char *key, size_t klen);
+
+/**
+ * @brief Compare two cjson_value. 
+ * 
+ * @param[in] lhs The object of comparison.
+ * @param[in] rhs The object of comparison.
+ * 
+ * @return 0 means equal, -1 means not euqal.
+ */
+int cjson_is_equal(const cjson_value *lhs, const cjson_value *rhs);
+
 #endif  /* CJSON_H__ */

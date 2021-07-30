@@ -457,6 +457,85 @@ char* cjson_stringify(const cjson_value *value, size_t *length) {
   return context.stack;
 }
 
+int cjson_find_key_index(const cjson_value *value, const char *key, size_t klen) {
+  int index = -1;
+  for (size_t i = 0; i < value->size; i++) {
+    if (value->members[i].klen == klen && !memcmp(value->members[i].key, key, klen)) {
+      index = (int)i;
+      break;
+    }
+  }
+  return index;
+}
+
+const cjson_value* cjson_find_key_value(const cjson_value *value, const char *key, size_t klen) {
+  int index = cjson_find_key_index(value, key, klen);
+  if (index >= 0) {
+    return &value->members[index].value;
+  } else {
+    return NULL;
+  }
+}
+
+int cjson_is_equal(const cjson_value *lhs, const cjson_value *rhs) {
+  int result = 0;
+  if (lhs->type != rhs->type) {
+    return -1;
+  }
+  switch (lhs->type) {
+    case CJSON_NUMBER: {
+      if (lhs->number != rhs->number) {
+        result = -1;
+      }
+      break;
+    }  
+    case CJSON_STRING: {
+      if (!(lhs->len == rhs->len && !memcmp(lhs->str, rhs->str, lhs->len))) {
+        result = -1;
+      }
+      break;
+    }
+    case CJSON_ARRAY: {
+      if (lhs->size != rhs->size) {
+        result = -1;
+      }
+      for (size_t i = 0; i < lhs->size && result >= 0; i++) {
+        if (!cjson_is_equal(&lhs->elements[i], &rhs->elements[i])) {
+          /* Nothing to do */
+        } else {
+          result = -1;
+        }
+      }
+      break;
+    }
+    case CJSON_OBJECT: {
+      if (lhs->mem_size != rhs->mem_size) {
+        result = -1;
+      }
+      for (size_t i = 0; i < lhs->mem_size && result >= 0; i++) {
+        const cjson_value *temp = cjson_find_key_value(rhs, lhs->members[i].key, lhs->members[i].klen);
+        if (!temp) {
+          result = -1;
+          break;
+        }
+        if (!cjson_is_equal(&lhs->members[i].value, temp)) {
+          /* Nothing to do */
+        } else {
+          result = -1;
+        }
+      }
+      break;
+    }
+    default: {
+      if (lhs->type != rhs->type) {
+        result = -1;
+      }
+      break;
+    }
+  }
+  return result;
+}
+
 void cjson_free_value(cjson_value *value) {
   switch (value->type) {
     case CJSON_STRING: {
