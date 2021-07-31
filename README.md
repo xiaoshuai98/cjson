@@ -4,6 +4,8 @@
 
 一个用C编写的JSON解析器和生成器。
 
+代码参考自[json-tutorial](https://github.com/miloyip/json-tutorial)。
+
 ## 构建
 
 ``` bash
