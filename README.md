@@ -29,4 +29,4 @@ ctest --verbose
 make code_coverage
 ```
 
-执行命令之后，在`${CMAKE_BINARY_DIR}`目录下会创建一个`code_coverage`目录。在浏览器中打开该目录下的`index.html`，就可以查看测试的code coverage。
+执行命令之后，在`${CMAKE_BINARY_DIR}`目录下会创建一个`code_coverage`目录。在浏览器中打开该目录下的`index.html`，就可以查看测试的code coverage。**需要安装`lcov`**。
