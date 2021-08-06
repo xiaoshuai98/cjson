@@ -8,16 +8,11 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Werror -Wextra -ansi -pedantic")
 
 # Set the compilation options of the test program
-set(CMAKE_DEBUG_C_FLAGS "-fsanitize=address -O1 -fno-omit-frame-pointer")
-if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${CMAKE_DEBUG_C_FLAGS}")
-  set(CMAKE_VERBOSE_MAKEFILE ON)
-endif()
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -fsanitize=address -O0 -fno-omit-frame-pointer -coverage")
 
 # Code coverage
 option(CMAKE_C_COVERAGE "Enable Code Coverage" ON)
 if (CMAKE_C_COVERAGE AND ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -coverage")
   set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMakeModules)
   include(CodeCoverage)
   setup_target_for_coverage_gcovr_html(NAME code_coverage)
