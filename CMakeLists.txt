@@ -15,7 +15,7 @@ option(CMAKE_C_COVERAGE "Enable Code Coverage" ON)
 if (CMAKE_C_COVERAGE AND ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
   set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMakeModules)
   include(CodeCoverage)
-  setup_target_for_coverage_gcovr_html(NAME code_coverage)
+  setup_target_for_coverage_gcovr_xml(NAME code-coverage)
 endif()
 
 add_library(cjson cjson.c)

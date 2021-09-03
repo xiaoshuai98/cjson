@@ -8,7 +8,7 @@ on:
 
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
-  BUILD_TYPE: Release
+  BUILD_TYPE: Debug
 
 jobs:
   build:
@@ -20,6 +20,11 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+
+    - name: Install tools
+      run: | 
+        sudo apt-get install gcovr
+        sudo apt-get install ninja-build
 
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
@@ -35,4 +40,17 @@ jobs:
       # Execute tests defined by the CMake configuration.  
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
       run: ctest -C ${{env.BUILD_TYPE}}
+
+    - name: Generate code coverage
+      working-directory: ${{github.workspace}}/build
+      run: ninja code-coverage
+
+    - name: Upload code coverage
+      working-directory: ${{github.workspace}}/build
+      uses: codecov/codecov-action@v2
+      with: 
+        token: ${{ secrets.CODECOV_TOKEN }}
+        files: ./code-coverage.xml
+        fail_ci_if_error: true
+        verbose: true
       
