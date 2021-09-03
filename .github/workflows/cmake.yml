@@ -41,13 +41,12 @@ jobs:
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
       run: ctest -C ${{env.BUILD_TYPE}}
 
-    - name: Generate code coverage
-      working-directory: ${{github.workspace}}/build
-      run: ninja code-coverage
-
     steps:
     - uses: actions/checkout@v2
     - working-directory: ${{github.workspace}}/build
+    - name: Generate code coverage
+      working-directory: ${{github.workspace}}/build
+      run: ninja code-coverage
     - uses: codecov/codecov-action@v2
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
