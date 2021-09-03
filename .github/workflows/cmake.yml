@@ -45,9 +45,9 @@ jobs:
       working-directory: ${{github.workspace}}/build
       run: ninja code-coverage
 
-    - uses: actions/checkout@main
-    - working-directory: ${{github.workspace}}/build
-    - uses: codecov/codecov-action@v2
+    - name: Upload code coverage
+      working-directory: ${{github.workspace}}/build
+      uses: codecov/codecov-action@v2
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         files: ./code-coverage.xml
