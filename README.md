@@ -1,6 +1,6 @@
 # cjson
 
-![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/qdslovelife/cjson/CMake/main) ![](https://img.shields.io/badge/coverage-100%25-yellow) ![GitHub](https://img.shields.io/github/license/qdslovelife/cjson)
+![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/qdslovelife/cjson/CMake/main) [![codecov](https://codecov.io/gh/qdslovelife/cjson/branch/main/graph/badge.svg?token=OP2XQAKIYM)](https://codecov.io/gh/qdslovelife/cjson) [![CodeFactor](https://www.codefactor.io/repository/github/qdslovelife/cjson/badge)](https://www.codefactor.io/repository/github/qdslovelife/cjson) ![GitHub](https://img.shields.io/github/license/qdslovelife/cjson)
 
 一个用C编写的JSON解析器和生成器。
 
@@ -19,14 +19,24 @@ cd build && make
 ctest --verbose
 ```
 
-若添加了`--verbose`选项，当测试失败时会打印造成测试失败的行数、期望值和实际值。如：
+## 使用
 
-![](./image/测试失败.png)
+### 反序列化
 
-## 查看Code Coverage
-
-``` bash
-make code_coverage
+``` c
+// 省略错误处理
+char json_buf[512];
+cjson_value value;
+int json_fd = open("hello.json", O_RDONLY);
+read(json_fd, json_buf, sizeof(json_buf));
+cjson_parse(json_buf, &value);
 ```
 
-执行命令之后，在`${CMAKE_BINARY_DIR}`目录下会创建一个`code_coverage`目录。在浏览器中打开该目录下的`index.html`，就可以查看测试的code coverage。**需要安装`gcovr`**。
+### 序列化
+
+``` c
+cjson_value value
+size_t length;
+// 写入value
+const char *result = cjson_stringfy(&value, &length);
+```
