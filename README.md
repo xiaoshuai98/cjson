@@ -1,6 +1,9 @@
 # cjson
 
-![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/qdslovelife/cjson/CMake/main) [![codecov](https://codecov.io/gh/qdslovelife/cjson/branch/main/graph/badge.svg?token=OP2XQAKIYM)](https://codecov.io/gh/qdslovelife/cjson) [![CodeFactor](https://www.codefactor.io/repository/github/qdslovelife/cjson/badge)](https://www.codefactor.io/repository/github/qdslovelife/cjson) ![GitHub](https://img.shields.io/github/license/qdslovelife/cjson)
+[![CMake](https://github.com/qdslovelife/cjson/actions/workflows/cmake.yml/badge.svg)](https://github.com/qdslovelife/cjson/actions/workflows/cmake.yml)
+[![codecov](https://codecov.io/gh/qdslovelife/cjson/branch/main/graph/badge.svg?token=OP2XQAKIYM)](https://codecov.io/gh/qdslovelife/cjson) 
+[![CodeFactor](https://www.codefactor.io/repository/github/qdslovelife/cjson/badge)](https://www.codefactor.io/repository/github/qdslovelife/cjson) 
+![GitHub](https://img.shields.io/github/license/qdslovelife/cjson)
 
 一个用C编写的JSON解析器和生成器。
 
