@@ -2,8 +2,7 @@
 
 [![CMake](https://github.com/qdslovelife/cjson/actions/workflows/cmake.yml/badge.svg)](https://github.com/qdslovelife/cjson/actions/workflows/cmake.yml)
 [![codecov](https://codecov.io/gh/qdslovelife/cjson/branch/main/graph/badge.svg?token=OP2XQAKIYM)](https://codecov.io/gh/qdslovelife/cjson) 
-[![CodeFactor](https://www.codefactor.io/repository/github/qdslovelife/cjson/badge)](https://www.codefactor.io/repository/github/qdslovelife/cjson) 
-![GitHub](https://img.shields.io/github/license/qdslovelife/cjson)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/7ad3b1a88d0f4534be7df8abb8e87c20)](https://www.codacy.com/gh/qdslovelife/cjson/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=qdslovelife/cjson&amp;utm_campaign=Badge_Grade)
 
 一个用C编写的JSON解析器和生成器。
 
