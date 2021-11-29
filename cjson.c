@@ -352,7 +352,7 @@ static int cjson_parse_value(cjson_context *context, cjson_value *value) {
 
 int cjson_parse(const char *json, cjson_value *value) {
   cjson_context context;
-  int state;
+  int state = CJSON_PARSE_NULL;
   if (!json) {
     state = CJSON_PARSE_EXPECT_VALUE;
     value->type = CJSON_NULL;
