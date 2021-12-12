@@ -5,7 +5,7 @@ project(cjson)
 set(CMAKE_C_STANDARD 11)
 
 # Set the Compilation options
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Werror -Wextra -ansi -pedantic")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Werror -Wextra -ansi")
 
 # Set the compilation options of the test program
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -fsanitize=address -O0 -fno-omit-frame-pointer -coverage")
