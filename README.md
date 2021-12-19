@@ -16,12 +16,6 @@ cmake -Bbuild -DCMAKE_BUILD_TYPE=Debug
 cd build && make
 ```
 
-## Test
-
-``` bash
-cd build && ctest
-```
-
 ### Windows
 
 ```
@@ -31,6 +25,12 @@ cd build && ctest
 Use visual studio to open the folder, then you're done.
 
 Note: The version of visual studio I am using is [Visual Studio Community 2022 preview](https://visualstudio.microsoft.com/zh-hans/vs/)
+
+## Test
+
+``` bash
+ctest
+```
 
 ## Using
 
