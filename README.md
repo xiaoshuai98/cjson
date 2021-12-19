@@ -1,6 +1,7 @@
 # cjson
 
-[![CMake](https://github.com/qdslovelife/cjson/actions/workflows/cmake.yml/badge.svg)](https://github.com/qdslovelife/cjson/actions/workflows/cmake.yml)
+[![linux](https://github.com/qdslovelife/cjson/actions/workflows/cmake.yml/badge.svg)](https://github.com/qdslovelife/cjson/actions/workflows/cmake.yml)
+[![windows](https://github.com/qdslovelife/cjson/actions/workflows/windows.yml/badge.svg)](https://github.com/qdslovelife/cjson/actions/workflows/windows.yml)
 [![codecov](https://codecov.io/gh/qdslovelife/cjson/branch/main/graph/badge.svg?token=OP2XQAKIYM)](https://codecov.io/gh/qdslovelife/cjson) 
 [![Language grade: C/C++](https://img.shields.io/lgtm/grade/cpp/g/qdslovelife/cjson.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/qdslovelife/cjson/context:cpp)
 
