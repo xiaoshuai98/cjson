@@ -9,8 +9,10 @@ A JSON parser and generator written in C.
 
 ## Build
 
+### Linux
+
 ``` bash
-cmake -Bbuild -DCMAKE_BUILD_TYPE=Release
+cmake -Bbuild -DCMAKE_BUILD_TYPE=Debug
 cd build && make
 ```
 
@@ -19,6 +21,16 @@ cd build && make
 ``` bash
 cd build && ctest
 ```
+
+### Windows
+
+```
+./packages.bat
+```
+
+Use visual studio to open the folder, then you're done.
+
+Note: The version of visual studio I am using is [Visual Studio Community 2022 preview](https://visualstudio.microsoft.com/zh-hans/vs/)
 
 ## Using
 
@@ -38,5 +50,6 @@ cjson_parse(json_buf, &value);
 ``` c
 cjson_value value
 size_t length;
+// modify 'value'
 const char *result = cjson_stringfy(&value, &length);
 ```

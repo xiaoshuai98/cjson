@@ -2,8 +2,11 @@ cmake_minimum_required(VERSION 3.8)
 
 if(WIN32)
 
-set(CMAKE_TOOLCHAIN_FILE "C:\\vcpkg\\scripts\\buildsystems\\vcpkg.cmake"
-  CACHE STRING "Vcpkg toolchain file")
+set(VCPKG_INSTALLATION_ROOT "${CMAKE_SOURCE_DIR}\\vcpkg"
+	CACHE STRING "Vcpkg installation directory")
+
+set(CMAKE_TOOLCHAIN_FILE "${VCPKG_INSTALLATION_ROOT}\\scripts\\buildsystems\\vcpkg.cmake"
+    CACHE STRING "Vcpkg toolchain file")
 
 endif(WIN32)
 
