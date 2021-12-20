@@ -15,7 +15,6 @@ project(cjson)
 set(CMAKE_C_STANDARD 11)
 
 if(UNIX)
-
 # Set the Compilation options
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Werror -Wextra -ansi")
 
@@ -29,10 +28,13 @@ if(CMAKE_C_COVERAGE AND ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
   include(CodeCoverage)
   setup_target_for_coverage_gcovr_xml(NAME code-coverage EXCLUDE "./test*")
 endif()
-
 endif(UNIX)
 
-add_library(cjson cjson.c)
+if(WIN32)
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS true)
+endif(WIN32)
+
+add_library(cjson SHARED cjson.c)
 
 # Test
 if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
