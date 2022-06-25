@@ -2,7 +2,7 @@
 
 [![linux](https://github.com/qdslovelife/cjson/actions/workflows/cmake.yml/badge.svg)](https://github.com/qdslovelife/cjson/actions/workflows/cmake.yml)
 [![windows](https://github.com/qdslovelife/cjson/actions/workflows/windows.yml/badge.svg)](https://github.com/qdslovelife/cjson/actions/workflows/windows.yml)
-[![codecov](https://codecov.io/gh/qdslovelife/cjson/branch/main/graph/badge.svg?token=OP2XQAKIYM)](https://codecov.io/gh/qdslovelife/cjson) 
+[![codecov](https://codecov.io/gh/xiaoshuai98/cjson/branch/main/graph/badge.svg?token=M4RL924FZK)](https://codecov.io/gh/xiaoshuai98/cjson)
 
 A JSON parser and generator written in C.
 
